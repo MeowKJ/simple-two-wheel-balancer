@@ -9,9 +9,22 @@
 
 class BalancingRobot {
 public:
+    struct MotorPins {
+        uint8_t in1;
+        uint8_t in2;
+        uint8_t sleep;
+        uint8_t encoderA;
+        uint8_t encoderB;
+    };
+    
+    struct IMUPins {
+        uint8_t sda;
+        uint8_t scl;
+    };
+    
     BalancingRobot();
     
-    void init();
+    void init(MotorPins leftMotor, MotorPins rightMotor, IMUPins imu);
     void update();
     void setTargetAngle(float angle);
     void setTargetSpeed(float speed);
@@ -20,6 +33,7 @@ public:
     void emergencyStop();
     
     float getPitch();
+    float getRoll();
     float getLeftSpeed();
     float getRightSpeed();
     

@@ -17,6 +17,9 @@ float PIDController::compute(float setpoint, float input) {
     
     if (_lastTime == 0 || dt > 1.0) {
         dt = 0.01; // Default dt for first run or if too much time passed
+        _lastTime = now;
+        _lastError = setpoint - input; // 初始化lastError
+        return 0; // 第一次调用返回0，避免异常值
     }
     
     _lastTime = now;
@@ -27,13 +30,19 @@ float PIDController::compute(float setpoint, float input) {
     float pTerm = _kp * error;
     
     // Integral with anti-windup
-    _integral += error * dt;
-    _integral = constrain(_integral, _outMin / _ki, _outMax / _ki);
+    if (abs(_ki) > 0.0001) { // 只有Ki足够大时才累加积分
+        _integral += error * dt;
+        // 根据Ki动态调整积分限幅
+        float integralLimit = (_outMax - _outMin) / (2.0 * abs(_ki));
+        _integral = constrain(_integral, -integralLimit, integralLimit);
+    } else {
+        _integral = 0; // Ki太小时清零积分
+    }
     float iTerm = _ki * _integral;
     
     // Derivative
     float dTerm = 0;
-    if (dt > 0) {
+    if (dt > 0.001) { // 确保dt不会太小导致除零
         dTerm = _kd * (error - _lastError) / dt;
     }
     

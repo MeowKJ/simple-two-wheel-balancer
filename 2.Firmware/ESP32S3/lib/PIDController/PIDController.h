@@ -22,6 +22,8 @@ private:
     float _lastError;
     float _outMin, _outMax;
     unsigned long _lastTime;
+    float _lastDTerm;
+    const float _dFilterTau = 0.1; // 微分滤波器常数
 };
 
 #endif

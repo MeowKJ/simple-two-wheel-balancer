@@ -11,12 +11,18 @@ IMU::IMU() {
 }
 
 bool IMU::init(uint8_t sda, uint8_t scl) {
+    Serial.println("    Starting I2C...");
     Wire.begin(sda, scl);
+    Wire.setClock(400000); // 400kHz
     
+    Serial.println("    Connecting to MPU6050...");
     if (!_mpu.begin()) {
+        Serial.println("    ERROR: MPU6050 not found!");
         return false;
     }
     
+    Serial.println("    MPU6050 found!");
+    Serial.println("    Configuring MPU6050...");
     _mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
     _mpu.setGyroRange(MPU6050_RANGE_500_DEG);
     _mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
@@ -29,7 +35,7 @@ bool IMU::init(uint8_t sda, uint8_t scl) {
 }
 
 void IMU::calibrate() {
-    Serial.println("Calibrating IMU...");
+    Serial.println("    Calibrating IMU (1000 samples)...");
     
     const int samples = 1000;
     float sumGyroX = 0, sumGyroY = 0, sumGyroZ = 0;
@@ -46,8 +52,15 @@ void IMU::calibrate() {
         sumAccelY += a.acceleration.y;
         sumAccelZ += a.acceleration.z;
         
+        // 每100次采样打印一个点，避免看门狗超时
+        if (i % 100 == 0) {
+            Serial.print(".");
+            yield(); // 让系统处理其他任务，喂狗
+        }
+        
         delay(2);
     }
+    Serial.println(); // 换行
     
     _gyroOffsetX = sumGyroX / samples;
     _gyroOffsetY = sumGyroY / samples;
@@ -56,7 +69,8 @@ void IMU::calibrate() {
     _accelOffsetY = sumAccelY / samples;
     _accelOffsetZ = sumAccelZ / samples - 9.81; // Gravity compensation
     
-    Serial.println("Calibration complete!");
+    Serial.println("    Calibration complete!");
+    Serial.printf("    Gyro offsets: X=%.3f Y=%.3f Z=%.3f\n", _gyroOffsetX, _gyroOffsetY, _gyroOffsetZ);
 }
 
 void IMU::update() {
@@ -81,20 +95,18 @@ void IMU::update() {
     _gyroZ = gz;
     
     // Calculate pitch and roll from accelerometer
-    float accelPitch = atan2(ay, sqrt(ax * ax + az * az)) * 180.0 / PI;
-    float accelRoll = atan2(-ax, az) * 180.0 / PI;
+    // 注意：这里交换了pitch和roll的计算，因为传感器安装方向
+    float accelPitch = atan2(-ax, az) * 180.0 / PI;  // 原来的roll公式
+    float accelRoll = atan2(ay, sqrt(ax * ax + az * az)) * 180.0 / PI;  // 原来的pitch公式
     
     // Complementary filter
     float alpha = 0.98;
-    complementaryFilter(accelPitch, gx * 180.0 / PI, _pitch, alpha);
-    complementaryFilter(accelRoll, gy * 180.0 / PI, _roll, alpha);
-}
-
-void IMU::complementaryFilter(float accelAngle, float gyroRate, float &angle, float alpha) {
-    unsigned long now = micros();
-    float dt = (now - _lastTime) / 1000000.0;
     
-    angle = alpha * (angle + gyroRate * dt) + (1.0 - alpha) * accelAngle;
+    // 更新Pitch角（左右倾斜 - 平衡车使用）
+    _pitch = alpha * (_pitch + gy * dt * 180.0 / PI) + (1.0 - alpha) * accelPitch;
+    
+    // 更新Roll角（前后倾斜）
+    _roll = alpha * (_roll + gx * dt * 180.0 / PI) + (1.0 - alpha) * accelRoll;
 }
 
 float IMU::getPitch() {

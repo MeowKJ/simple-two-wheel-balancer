@@ -34,8 +34,6 @@ private:
     float _accelOffsetX, _accelOffsetY, _accelOffsetZ;
     
     unsigned long _lastTime;
-    
-    void complementaryFilter(float accelAngle, float gyroRate, float &angle, float alpha);
 };
 
 #endif

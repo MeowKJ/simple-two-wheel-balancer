@@ -1,5 +1,4 @@
 #include "BalancingRobot.h"
-#include "board.h"
 
 BalancingRobot::BalancingRobot() {
     _targetAngle = 0;
@@ -9,35 +8,59 @@ BalancingRobot::BalancingRobot() {
     _speedOutput = 0;
     _turnOutput = 0;
     _isBalancing = false;
+    
+    // 关键：初始化所有指针为nullptr
+    _leftMotor = nullptr;
+    _rightMotor = nullptr;
+    _leftEncoder = nullptr;
+    _rightEncoder = nullptr;
+    _imu = nullptr;
+    _anglePID = nullptr;
+    _speedPID = nullptr;
+    _turnPID = nullptr;
 }
 
-void BalancingRobot::init() {
+void BalancingRobot::init(MotorPins leftMotor, MotorPins rightMotor, IMUPins imu) {
+    Serial.println("  [1/5] Initializing left motor...");
     // Initialize motors
-    _leftMotor = new MotorDriver(LMOTOR_IN1_PIN, LMOTOR_IN2_PIN, 
-                                  LMOTOR_SLEEP_PIN, MCPWM_UNIT_0, MCPWM_TIMER_0);
-    _rightMotor = new MotorDriver(RMOTOR_IN1_PIN, RMOTOR_IN2_PIN, 
-                                   RMOTOR_SLEEP_PIN, MCPWM_UNIT_0, MCPWM_TIMER_1);
-    
+    _leftMotor = new MotorDriver(leftMotor.in1, leftMotor.in2, 
+                                  leftMotor.sleep, MCPWM_UNIT_0, MCPWM_TIMER_0);
     _leftMotor->init();
+    Serial.println("  [1/5] Left motor OK");
+    
+    Serial.println("  [2/5] Initializing right motor...");
+    _rightMotor = new MotorDriver(rightMotor.in1, rightMotor.in2, 
+                                   rightMotor.sleep, MCPWM_UNIT_0, MCPWM_TIMER_1);
     _rightMotor->init();
+    Serial.println("  [2/5] Right motor OK");
     
+    Serial.println("  [3/5] Initializing left encoder...");
     // Initialize encoders
-    _leftEncoder = new Encoder(LMOTOR_ENCODER_A_PIN, LMOTOR_ENCODER_B_PIN, PCNT_UNIT_0);
-    _rightEncoder = new Encoder(RMOTOR_ENCODER_A_PIN, RMOTOR_ENCODER_B_PIN, PCNT_UNIT_1);
-    
+    _leftEncoder = new Encoder(leftMotor.encoderA, leftMotor.encoderB, PCNT_UNIT_0);
     _leftEncoder->init();
-    _rightEncoder->init();
+    Serial.println("  [3/5] Left encoder OK");
     
+    Serial.println("  [4/5] Initializing right encoder...");
+    _rightEncoder = new Encoder(rightMotor.encoderA, rightMotor.encoderB, PCNT_UNIT_1);
+    _rightEncoder->init();
+    Serial.println("  [4/5] Right encoder OK");
+    
+    Serial.println("  [5/5] Initializing IMU (this may take 2-3 seconds)...");
     // Initialize IMU
     _imu = new IMU();
-    if (!_imu->init(I2C_SDA_PIN, I2C_SCL_PIN)) {
-        Serial.println("Failed to initialize IMU!");
-        while (1) delay(10);
+    if (!_imu->init(imu.sda, imu.scl)) {
+        Serial.println("  [5/5] Failed to initialize IMU!");
+        Serial.println("  Please check I2C connections!");
+        Serial.println("  System will continue without IMU...");
+        // 不要死循环，让系统继续运行
+        delay(3000);
+        return; // 或者可以设置一个错误标志
     }
+    Serial.println("  [5/5] IMU OK");
     
     // Initialize PID controllers
     // Angle PID: controls balance angle
-    _anglePID = new PIDController(40.0, 0.0, 1.5);
+    _anglePID = new PIDController(5.0, 0.0, 0.7);
     _anglePID->setOutputLimits(-100, 100);
     
     // Speed PID: controls forward/backward movement
@@ -54,7 +77,7 @@ void BalancingRobot::init() {
 void BalancingRobot::update() {
     // Update IMU
     _imu->update();
-    float pitch = _imu->getPitch();
+    float pitch = _imu->getPitch(); // 使用Pitch角（前后倾斜）
     
     // Update encoders
     _leftEncoder->update();
@@ -121,7 +144,11 @@ void BalancingRobot::emergencyStop() {
 }
 
 float BalancingRobot::getPitch() {
-    return _imu->getPitch();
+    return _imu->getPitch(); // 返回Pitch角
+}
+
+float BalancingRobot::getRoll() {
+    return _imu->getRoll();
 }
 
 float BalancingRobot::getLeftSpeed() {

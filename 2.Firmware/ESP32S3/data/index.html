@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>平衡车控制台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .status-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .status-item {
+            background: rgba(255,255,255,0.2);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .status-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .status-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .control-panel {
+            margin-bottom: 20px;
+        }
+        
+        .control-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        
+        .joystick-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .joystick {
+            width: 250px;
+            height: 250px;
+            position: relative;
+            background: #f0f0f0;
+            border-radius: 50%;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .joystick-button {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .joystick-button:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-up {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .btn-down {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .btn-left {
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .btn-right {
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .btn-center {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: #ff6b6b;
+        }
+        
+        .pid-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .pid-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #764ba2;
+        }
+        
+        .pid-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-group label {
+            font-size: 0.85em;
+            margin-bottom: 5px;
+            color: #666;
+        }
+        
+        .input-group input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            color: white;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+            box-shadow: 0 4px 15px rgba(86, 171, 47, 0.4);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .pid-inputs {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 平衡车控制台</h1>
+        
+        <!-- 状态面板 -->
+        <div class="status-panel">
+            <div style="text-align: center; font-size: 1.2em; margin-bottom: 10px;">
+                实时状态 <span id="statusBadge" style="background: rgba(255,255,255,0.3); padding: 5px 15px; border-radius: 20px;">●</span>
+            </div>
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-label">Pitch角</div>
+                    <div class="status-value" id="pitch">--</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Roll角</div>
+                    <div class="status-value" id="roll">--</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">左轮速度</div>
+                    <div class="status-value" id="leftSpeed">--</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">右轮速度</div>
+                    <div class="status-value" id="rightSpeed">--</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <div class="control-title">🎮 运动控制</div>
+            <div class="joystick-container">
+                <div class="joystick">
+                    <button class="joystick-button btn-up" ontouchstart="sendControl('forward')" ontouchend="sendControl('stop')" onmousedown="sendControl('forward')" onmouseup="sendControl('stop')">↑</button>
+                    <button class="joystick-button btn-down" ontouchstart="sendControl('backward')" ontouchend="sendControl('stop')" onmousedown="sendControl('backward')" onmouseup="sendControl('stop')">↓</button>
+                    <button class="joystick-button btn-left" ontouchstart="sendControl('left')" ontouchend="sendControl('stop')" onmousedown="sendControl('left')" onmouseup="sendControl('stop')">←</button>
+                    <button class="joystick-button btn-right" ontouchstart="sendControl('right')" ontouchend="sendControl('stop')" onmousedown="sendControl('right')" onmouseup="sendControl('stop')">→</button>
+                    <button class="joystick-button btn-center" onclick="sendControl('stop')">STOP</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 角度PID -->
+        <div class="pid-section">
+            <div class="pid-title">⚙️ 角度PID参数</div>
+            <div class="pid-inputs">
+                <div class="input-group">
+                    <label>Kp</label>
+                    <input type="number" id="angle_kp" step="0.1" value="5.0">
+                </div>
+                <div class="input-group">
+                    <label>Ki</label>
+                    <input type="number" id="angle_ki" step="0.01" value="0.0">
+                </div>
+                <div class="input-group">
+                    <label>Kd</label>
+                    <input type="number" id="angle_kd" step="0.1" value="0.5">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 速度PID -->
+        <div class="pid-section">
+            <div class="pid-title">🚗 速度PID参数 (建议Kp/Ki=200)</div>
+            <div class="pid-inputs">
+                <div class="input-group">
+                    <label>Kp</label>
+                    <input type="number" id="speed_kp" step="0.1" value="2.0">
+                </div>
+                <div class="input-group">
+                    <label>Ki</label>
+                    <input type="number" id="speed_ki" step="0.001" value="0.01">
+                </div>
+                <div class="input-group">
+                    <label>Kd</label>
+                    <input type="number" id="speed_kd" step="0.01" value="0.0">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 转向PID -->
+        <div class="pid-section">
+            <div class="pid-title">🔄 转向PID参数</div>
+            <div class="pid-inputs">
+                <div class="input-group">
+                    <label>Kp</label>
+                    <input type="number" id="turn_kp" step="0.1" value="0.0">
+                </div>
+                <div class="input-group">
+                    <label>Ki</label>
+                    <input type="number" id="turn_ki" step="0.01" value="0.0">
+                </div>
+                <div class="input-group">
+                    <label>Kd</label>
+                    <input type="number" id="turn_kd" step="0.1" value="0.0">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="applyPID()">应用PID参数</button>
+            <button class="btn btn-success" onclick="savePID()">保存到Flash</button>
+            <button class="btn btn-warning" onclick="loadPID()">从Flash加载</button>
+            <button class="btn btn-info" onclick="refreshStatus()">刷新状态</button>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    
+    <script>
+        function sendControl(action) {
+            fetch('/control', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'action=' + action
+            }).then(r => r.text()).then(data => {
+                console.log('Control:', action);
+            });
+        }
+        
+        function applyPID() {
+            const params = new URLSearchParams();
+            params.append('angle_kp', document.getElementById('angle_kp').value);
+            params.append('angle_ki', document.getElementById('angle_ki').value);
+            params.append('angle_kd', document.getElementById('angle_kd').value);
+            params.append('speed_kp', document.getElementById('speed_kp').value);
+            params.append('speed_ki', document.getElementById('speed_ki').value);
+            params.append('speed_kd', document.getElementById('speed_kd').value);
+            params.append('turn_kp', document.getElementById('turn_kp').value);
+            params.append('turn_ki', document.getElementById('turn_ki').value);
+            params.append('turn_kd', document.getElementById('turn_kd').value);
+            
+            fetch('/setPID', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: params
+            }).then(r => r.text()).then(data => {
+                showNotification('✅ PID参数已应用', 'success');
+            });
+        }
+        
+        function savePID() {
+            applyPID();
+            setTimeout(() => {
+                fetch('/save', {method: 'POST'})
+                    .then(r => r.text())
+                    .then(data => {
+                        showNotification('💾 参数已保存到Flash', 'success');
+                    });
+            }, 100);
+        }
+        
+        function loadPID() {
+            fetch('/load', {method: 'POST'})
+                .then(r => r.text())
+                .then(data => {
+                    showNotification('📥 参数已从Flash加载', 'info');
+                    refreshStatus();
+                });
+        }
+        
+        function refreshStatus() {
+            fetch('/status')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('pitch').textContent = data.pitch.toFixed(2) + '°';
+                    document.getElementById('roll').textContent = data.roll.toFixed(2) + '°';
+                    document.getElementById('leftSpeed').textContent = data.leftSpeed.toFixed(1) + ' RPM';
+                    document.getElementById('rightSpeed').textContent = data.rightSpeed.toFixed(1) + ' RPM';
+                    
+                    const badge = document.getElementById('statusBadge');
+                    if (data.balancing) {
+                        badge.textContent = '● 平衡中';
+                        badge.style.background = 'rgba(0,255,0,0.3)';
+                    } else {
+                        badge.textContent = '● 已停止';
+                        badge.style.background = 'rgba(255,0,0,0.3)';
+                    }
+                    
+                    // 只在输入框没有焦点时才更新PID参数
+                    const inputs = [
+                        'angle_kp', 'angle_ki', 'angle_kd',
+                        'speed_kp', 'speed_ki', 'speed_kd',
+                        'turn_kp', 'turn_ki', 'turn_kd'
+                    ];
+                    
+                    inputs.forEach(id => {
+                        const input = document.getElementById(id);
+                        if (document.activeElement !== input) {
+                            input.value = data[id];
+                        }
+                    });
+                });
+        }
+        
+        function showNotification(message, type) {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.style.display = 'block';
+            
+            if (type === 'success') {
+                notif.style.borderLeft = '4px solid #56ab2f';
+            } else if (type === 'info') {
+                notif.style.borderLeft = '4px solid #4facfe';
+            }
+            
+            setTimeout(() => {
+                notif.style.display = 'none';
+            }, 3000);
+        }
+        
+        // 自动刷新状态
+        setInterval(refreshStatus, 500);
+        
+        // 初始加载
+        refreshStatus();
+        
+        // 防止页面滚动
+        document.body.addEventListener('touchmove', function(e) {
+            if (e.target.classList.contains('joystick-button')) {
+                e.preventDefault();
+            }
+        }, {passive: false});
+    </script>
+</body>
+</html>

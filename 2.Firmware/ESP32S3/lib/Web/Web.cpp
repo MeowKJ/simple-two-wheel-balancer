@@ -3,15 +3,15 @@
 
 WebServerManager::WebServerManager(BalancingRobot* robot) {
     _robot = robot;
-    _server = new ::WebServer(80);
+    _server = new WebServer(80);  // 去掉::前缀
     
     // 默认PID参数（基于Kp/Ki=200经验值）
     _params.angle_kp = 5.0;
     _params.angle_ki = 0.0;
     _params.angle_kd = 0.5;
     
-    _params.speed_kp = 2.0;
-    _params.speed_ki = 0.01;  
+    _params.speed_kp = 2.0;   // Kp/Ki = 200
+    _params.speed_ki = 0.01;  // Ki = Kp/200 = 2.0/200
     _params.speed_kd = 0.0;
     
     _params.turn_kp = 0.0;
@@ -251,15 +251,15 @@ void WebServerManager::handleGetStatus() {
     json += "\"leftSpeed\":" + String(_robot->getLeftSpeed(), 1) + ",";
     json += "\"rightSpeed\":" + String(_robot->getRightSpeed(), 1) + ",";
     json += "\"balancing\":" + String(_robot->isBalancing() ? "true" : "false") + ",";
-    json += "\"angle_kp\":" + String(_params.angle_kp, 5) + ",";
-    json += "\"angle_ki\":" + String(_params.angle_ki, 5) + ",";
-    json += "\"angle_kd\":" + String(_params.angle_kd, 5) + ",";
-    json += "\"speed_kp\":" + String(_params.speed_kp, 5) + ",";
-    json += "\"speed_ki\":" + String(_params.speed_ki, 5) + ",";
-    json += "\"speed_kd\":" + String(_params.speed_kd, 5) + ",";
-    json += "\"turn_kp\":" + String(_params.turn_kp, 5) + ",";
-    json += "\"turn_ki\":" + String(_params.turn_ki, 5) + ",";
-    json += "\"turn_kd\":" + String(_params.turn_kd, 5);
+    json += "\"angle_kp\":" + String(_params.angle_kp, 3) + ",";
+    json += "\"angle_ki\":" + String(_params.angle_ki, 3) + ",";
+    json += "\"angle_kd\":" + String(_params.angle_kd, 3) + ",";
+    json += "\"speed_kp\":" + String(_params.speed_kp, 3) + ",";
+    json += "\"speed_ki\":" + String(_params.speed_ki, 3) + ",";
+    json += "\"speed_kd\":" + String(_params.speed_kd, 3) + ",";
+    json += "\"turn_kp\":" + String(_params.turn_kp, 3) + ",";
+    json += "\"turn_ki\":" + String(_params.turn_ki, 3) + ",";
+    json += "\"turn_kd\":" + String(_params.turn_kd, 3);
     json += "}";
     
     _server->send(200, "application/json", json);

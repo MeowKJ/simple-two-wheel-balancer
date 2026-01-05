@@ -331,15 +331,15 @@
         
         <!-- 速度PID -->
         <div class="pid-section">
-            <div class="pid-title">🚗 速度PID参数 (建议Kp/Ki=200)</div>
+            <div class="pid-title">🚗 速度PID参数 (归一化到0-100%，建议Kp/Ki=200)</div>
             <div class="pid-inputs">
                 <div class="input-group">
                     <label>Kp</label>
-                    <input type="number" id="speed_kp" step="0.1" value="2.0">
+                    <input type="number" id="speed_kp" step="0.01" value="0.2">
                 </div>
                 <div class="input-group">
                     <label>Ki</label>
-                    <input type="number" id="speed_ki" step="0.001" value="0.01">
+                    <input type="number" id="speed_ki" step="0.0001" value="0.001">
                 </div>
                 <div class="input-group">
                     <label>Kd</label>
@@ -388,7 +388,12 @@
                 console.log('Control:', action);
             });
         }
-        
+
+        //输入框失去焦点，自动更新参数
+        document.querySelectorAll('.pid-section input').forEach(input => {
+            input.addEventListener('blur', applyPID);
+        });
+
         function applyPID() {
             const params = new URLSearchParams();
             params.append('angle_kp', document.getElementById('angle_kp').value);

@@ -61,12 +61,14 @@ void setup() {
     
     BalancingRobot::MotorPins leftMotor = {
         LMOTOR_IN1_PIN, LMOTOR_IN2_PIN, LMOTOR_SLEEP_PIN,
-        LMOTOR_ENCODER_A_PIN, LMOTOR_ENCODER_B_PIN
+        LMOTOR_ENCODER_A_PIN, LMOTOR_ENCODER_B_PIN,
+        false  // 左编码器不反转（根据实际调整）
     };
     
     BalancingRobot::MotorPins rightMotor = {
         RMOTOR_IN1_PIN, RMOTOR_IN2_PIN, RMOTOR_SLEEP_PIN,
-        RMOTOR_ENCODER_A_PIN, RMOTOR_ENCODER_B_PIN
+        RMOTOR_ENCODER_A_PIN, RMOTOR_ENCODER_B_PIN,
+        true   // 右编码器反转（根据实际调整）
     };
     
     BalancingRobot::IMUPins imuPins = {
@@ -162,6 +164,14 @@ void balanceTask(void *parameter) {
     while (1) {
         robot.update();
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
+        
+        // 定期检查栈使用情况（调试用）
+        static uint32_t counter = 0;
+        if (++counter >= 1000) { // 每10秒打印一次
+            UBaseType_t stackLeft = uxTaskGetStackHighWaterMark(NULL);
+            Serial.printf("Balance task stack left: %d bytes\n", stackLeft * 4);
+            counter = 0;
+        }
     }
 }
 
@@ -211,7 +221,7 @@ void ledTask(void *parameter) {
 void webServerTask(void *parameter) {
     while (1) {
         webServer->handleClient();
-        vTaskDelay(pdMS_TO_TICKS(5)); // 5ms delay
+        vTaskDelay(pdMS_TO_TICKS(1)); // 1ms delay
     }
 }
 
@@ -226,78 +236,5 @@ void readBattery() {
 }
 
 void processSerialCommands() {
-    if (Serial.available()) {
-        char cmd = Serial.read();
-        
-        switch (cmd) {
-            case 'w': // Forward
-                robot.setTargetSpeed(20);
-                Serial.println("Moving forward");
-                break;
-                
-            case 's': // Backward
-                robot.setTargetSpeed(-20);
-                Serial.println("Moving backward");
-                break;
-                
-            case 'a': // Turn left
-                robot.setTargetTurn(-20);
-                Serial.println("Turning left");
-                break;
-                
-            case 'd': // Turn right
-                robot.setTargetTurn(20);
-                Serial.println("Turning right");
-                break;
-                
-            case 'x': // Stop
-                robot.setTargetSpeed(0);
-                robot.setTargetTurn(0);
-                Serial.println("Stopped");
-                break;
-                
-            case 'p': { // Tune angle Kp - 添加大括号作用域
-                Serial.println("Enter Angle Kp:");
-                while (!Serial.available()) delay(10);
-                float kp = Serial.parseFloat();
-                robot.setAnglePID(kp, 0, 1.5);
-                Serial.print("Angle Kp set to: ");
-                Serial.println(kp);
-                break;
-            }
-                
-            case 'i': { // Tune angle Ki - 添加大括号作用域
-                Serial.println("Enter Angle Ki:");
-                while (!Serial.available()) delay(10);
-                float ki = Serial.parseFloat();
-                robot.setAnglePID(40.0, ki, 1.5);
-                Serial.print("Angle Ki set to: ");
-                Serial.println(ki);
-                break;
-            }
-                
-            case 'k': { // 改用k代替d（避免与'd'转向冲突）
-                Serial.println("Enter Angle Kd:");
-                while (!Serial.available()) delay(10);
-                float kd = Serial.parseFloat();
-                robot.setAnglePID(40.0, 0, kd);
-                Serial.print("Angle Kd set to: ");
-                Serial.println(kd);
-                break;
-            }
-                
-            case 'h': // Help
-                Serial.println("\nCommands:");
-                Serial.println("w - Forward");
-                Serial.println("s - Backward");
-                Serial.println("a - Turn left");
-                Serial.println("d - Turn right");
-                Serial.println("x - Stop");
-                Serial.println("p - Tune angle Kp");
-                Serial.println("i - Tune angle Ki");
-                Serial.println("k - Tune angle Kd");
-                Serial.println("h - Help");
-                break;
-        }
-    }
+
 }

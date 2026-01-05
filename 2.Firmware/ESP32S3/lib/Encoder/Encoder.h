@@ -6,13 +6,14 @@
 
 class Encoder {
 public:
-    Encoder(uint8_t pinA, uint8_t pinB, pcnt_unit_t unit);
+    Encoder(uint8_t pinA, uint8_t pinB, pcnt_unit_t unit, bool reverse = false);
     
     void init();
     int16_t getCount();
     void reset();
     float getSpeed(); // RPM
     void update(); // Call periodically to calculate speed
+    void setReverse(bool reverse); // 设置反转
     
     static const int PPR = 7;
     static const int GEAR_RATIO = 50;
@@ -25,6 +26,7 @@ private:
     int16_t _lastCount;
     unsigned long _lastTime;
     float _speed;
+    bool _reverse;  // 反转标志
 };
 
 #endif

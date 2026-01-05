@@ -1,5 +1,8 @@
 #include "MotorDriver.h"
 
+//电机死区控制
+#define MOTOR_DEADZONE 5
+
 MotorDriver::MotorDriver(uint8_t in1, uint8_t in2, uint8_t sleep_pin,
                          mcpwm_unit_t unit, mcpwm_timer_t timer) {
     _in1 = in1;
@@ -33,9 +36,19 @@ void MotorDriver::init() {
 void MotorDriver::setSpeed(int16_t speed) {
     speed = constrain(speed, -100, 100);
     
+    // if (speed > 0) {
+    //     forward(abs(speed));
+    // } else if (speed < 0) {
+    //     backward(abs(speed));
+    // } else {
+    //     brake();
+    // }
+    //最小速度为死区值
     if (speed > 0) {
+        if (speed < MOTOR_DEADZONE) speed = MOTOR_DEADZONE;
         forward(abs(speed));
     } else if (speed < 0) {
+        if (speed > -MOTOR_DEADZONE) speed = -MOTOR_DEADZONE;
         backward(abs(speed));
     } else {
         brake();

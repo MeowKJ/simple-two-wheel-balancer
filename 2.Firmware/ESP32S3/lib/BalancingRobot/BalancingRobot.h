@@ -15,6 +15,7 @@ public:
         uint8_t sleep;
         uint8_t encoderA;
         uint8_t encoderB;
+        bool encoderReverse;  // 编码器反转标志
     };
     
     struct IMUPins {

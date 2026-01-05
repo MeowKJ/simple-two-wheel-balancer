@@ -1,12 +1,13 @@
 #include "Encoder.h"
 
-Encoder::Encoder(uint8_t pinA, uint8_t pinB, pcnt_unit_t unit) {
+Encoder::Encoder(uint8_t pinA, uint8_t pinB, pcnt_unit_t unit, bool reverse) {
     _pinA = pinA;
     _pinB = pinB;
     _unit = unit;
     _lastCount = 0;
     _lastTime = 0;
     _speed = 0;
+    _reverse = reverse;
 }
 
 void Encoder::init() {
@@ -65,6 +66,11 @@ void Encoder::update() {
         // Calculate RPM
         _speed = (delta * 60000.0) / (TOTAL_PULSES * dt);
         
+        // 应用反转标志
+        if (_reverse) {
+            _speed = -_speed;
+        }
+        
         _lastCount = count;
         _lastTime = now;
     }
@@ -72,4 +78,8 @@ void Encoder::update() {
 
 float Encoder::getSpeed() {
     return _speed;
+}
+
+void Encoder::setReverse(bool reverse) {
+    _reverse = reverse;
 }
